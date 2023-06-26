@@ -38,6 +38,7 @@ export default function App() {
                 postalCode: reverseRes.postalCode
             });
             setLoading(false);
+            console.log("Received coordinates, loading location weather");
         }
     };
 
@@ -48,7 +49,7 @@ export default function App() {
     if (loading) {
         return (
             <View style={styles.centered}>
-                <ActivityIndicator size="large"/>
+                <ActivityIndicator size="large" color="#00ff00"/>
             </View>
         );
     }

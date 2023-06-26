@@ -4,8 +4,6 @@ import PropTypes from "prop-types";
 import { View, Text } from "react-native";
 
 export default function CurrentWeather(props) {
-    console.log(props.weather);
-    console.log(props.weather.endTime.getHours());
     return (
         <View style={styles.parentContainer}>
             <View style={styles.childContainer}>

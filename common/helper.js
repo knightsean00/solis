@@ -7,7 +7,7 @@ export function fToC(fahrenheit) {
 }
 
 export function formatTime12(date, includeDate) {
-    let hour = date.getHours();
+    let hour = date.hour;
     let timeOfDay = "am";
     if (hour > 11) {
         timeOfDay = "pm";
@@ -22,19 +22,20 @@ export function formatTime12(date, includeDate) {
     }
 
     if (includeDate)
-        return `${date.getMonth() + 1}/${date.getDate()} ${hour}${timeOfDay}`;
+        return `${date.month}/${date.day} ${hour}${timeOfDay}`;
     return `${hour}${timeOfDay}`;
 }
 
 export function formatTimeLabel(dates) {
     const seen = new Set();
     return dates.map(date => {
-        if (seen.has(date.getDate())) {
-            return formatTime12(date, false);
-        } else {
-            seen.add(date.getDate());
-            return formatTime12(date, true);
-        }
+        // if (seen.has(date.getDate())) {
+        //     return formatTime12(date, false);
+        // } else {
+        //     seen.add(date.getDate());
+        //     return formatTime12(date, true);
+        // }
+        return formatTime12(date, true);
     });
 }
 
@@ -44,3 +45,9 @@ export function takeEveryN(array, n) {
         newArray.push(array[i]);
     return newArray;
 }
+
+// export function formatTimeLocale(date, offset) {
+//     const epochDate = date.getTime();
+//     const epochOffset = offset * 60000;
+//     return new Date(epochDate + epochOffset); // This will think it's in UTC
+// }
