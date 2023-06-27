@@ -12,11 +12,18 @@ import Sun from "../components/Sun";
 import CurrentWeather from "../components/CurrentWeather";
 import WeatherBarGraph from "../components/WeatherBarGraph";
 
+
 export default function Forecast(props) {
     const [loading, setLoading] = useState(true);
     const [errorMsg, setErrorMsg] = useState(null);
     const [forecast, setForecast] = useState([]);
-  
+    const [moduleOrder, setModuleOrder] = useState([
+        "temperature",
+        "precipitation",
+        "windSpeed",
+        "humidity",
+        "sun",
+    ]);
 
     const getLocationInformation = async (latitude, longitude) => {
         try {
@@ -94,53 +101,87 @@ export default function Forecast(props) {
             </View>
         );
     }
-
-    // const plotEveryN = 3;
     const maxSlice = 64;
-    console.log();
-    const precipitationDomain = {
+    const percentDomain = {
         y: [0, 100]
     };
+
+    const weatherModuleTypes = {
+        sun: {
+            component: Sun,
+            props: {
+                longitude: props.longitude,
+                latitude: props.latitude,
+                timezone: forecast[0].endTime.zoneName,
+                loadingSpeed: 2000,
+            }
+        },
+        precipitation: {
+            component: WeatherBarGraph,
+            props: {
+                title: "Precipitation",
+                yLabel: "%",
+                // xData: formatTimeLabel(forecast.map(period => period.endTime).slice(0, maxSlice)),
+                xData: forecast.map(period => period.endTime).slice(0, maxSlice),
+                yData: forecast.map(period => period.probabilityOfPrecipitation.value).slice(0, maxSlice),
+                domain: percentDomain,
+                gradient: PrecipitationGradient,
+                loadingSpeed: 500,
+            }
+        },
+        windSpeed: {
+            component: WeatherBarGraph,
+            props: {
+                title: "Wind Speed",
+                yLabel: forecast[0].windSpeed.split(" ")[1],
+                // xData: formatTimeLabel(forecast.map(period => period.endTime).slice(0, maxSlice)),
+                xData: forecast.map(period => period.endTime).slice(0, maxSlice),
+                yData: forecast.map(period => Number(period.windSpeed.split(" ")[0])).slice(0, maxSlice),
+                gradient: WindSpeedGradient,
+                loadingSpeed: 500,
+            }
+        },
+        humidity: {
+            component: WeatherAreaGraph,
+            props: {
+                title: "Humidity",
+                yLabel: "%",
+                // xData: formatTimeLabel(forecast.map(period => period.endTime).slice(0, maxSlice)),
+                xData: forecast.map(period => period.endTime).slice(0, maxSlice),
+                yData: forecast.map(period => period.humidity).slice(0, maxSlice),
+                gradient: HumidityGradient,
+                loadingSpeed: 2000,
+            }
+        },
+        temperature: {
+            component: WeatherAreaGraph,
+            props: {
+                title: "Temperature",
+                yLabel: "°" + forecast[0].temperatureUnit,
+                // xData: formatTimeLabel(forecast.map(period => period.endTime).slice(0, maxSlice)),
+                xData: forecast.map(period => period.endTime).slice(0, maxSlice),
+                yData: forecast.map(period => period.temperature).slice(0, maxSlice),
+                gradient: TemperatureGradient,
+                loadingSpeed: 2000,
+            },
+        },
+    };
+
+    let cumulativeDelay = 0;
     return (
         <View style={styles.container}>
             <Text style={styles.headerText} numberOfLines={1} adjustsFontSizeToFit>{text}</Text>
             <CurrentWeather weather={forecast[0]}/>
-            <Sun
-                longitude={props.longitude}
-                latitude={props.latitude}
-                timezone={forecast[0].endTime.zoneName}
-                startTime={forecast[0].endTime.toSeconds()}
-                endTime={forecast[24].endTime.toSeconds()}
-            />
-            <WeatherBarGraph 
-                title={"Precipitation"}
-                yLabel="%"
-                xData={formatTimeLabel(forecast.map(period => period.endTime).slice(0, maxSlice))} 
-                yData={forecast.map(period => period.probabilityOfPrecipitation.value).slice(0, maxSlice)} 
-                domain={precipitationDomain}
-                gradient={PrecipitationGradient}
-            />
-            <WeatherBarGraph 
-                title={"Wind Speed"}
-                yLabel={forecast[0].windSpeed.split(" ")[1]}
-                xData={formatTimeLabel(forecast.map(period => period.endTime).slice(0, maxSlice))} 
-                yData={forecast.map(period => Number(period.windSpeed.split(" ")[0])).slice(0, maxSlice)} 
-                gradient={WindSpeedGradient}
-            />
-            <WeatherAreaGraph
-                title = {"Temperature"}
-                yLabel={"°" + forecast[0].temperatureUnit}
-                xData={formatTimeLabel(forecast.map(period => period.endTime).slice(0, maxSlice))} 
-                yData={forecast.map(period => period.temperature).slice(0, maxSlice)} 
-                gradient={TemperatureGradient}
-            />
-            <WeatherAreaGraph
-                title = {"Humidity"}
-                yLabel="%"
-                xData={formatTimeLabel(forecast.map(period => period.endTime).slice(0, maxSlice))} 
-                yData={forecast.map(period => period.humidity).slice(0, maxSlice)} 
-                gradient={HumidityGradient}
-            />
+            {
+                moduleOrder.map((componentName, idx) => {
+                    const delay = cumulativeDelay > 0 ? cumulativeDelay + 1000 : cumulativeDelay;
+                    cumulativeDelay = delay + weatherModuleTypes[componentName].props.loadingSpeed;
+                    return React.createElement(weatherModuleTypes[componentName].component, {
+                        ...weatherModuleTypes[componentName].props, 
+                        key: idx, 
+                        animationStagger: delay});
+                })
+            }
         </View>
     );
 }

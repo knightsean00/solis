@@ -9,6 +9,7 @@ import { DateTime } from "luxon";
 export default function Sun(props) {
     const [sunData, setSunData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [animationStagger, setStagger] = useState(props.animationStagger ? props.animationStagger : 0);
 
     // useEffect
 
@@ -96,7 +97,7 @@ export default function Sun(props) {
                 />
                 <VictoryAxis
                     dependentAxis={true}
-                    tickFormat={(v) => ""}
+                    tickFormat={() => ""}
                     style={{
                         axis: {
                             strokeWidth:1
@@ -124,8 +125,10 @@ export default function Sun(props) {
                         })
                     }
                     animate={{
-                        duration: 2000,
-                        onLoad: { duration: 3000 }
+                        duration: 1000,
+                        delay: animationStagger,
+                        onLoad: { duration: props.loadingSpeed },
+                        onEnd: () => setStagger(0)
                     }}
                     interpolation="natural"
                     labels={["", "", "Sunrise\n" + xSunData[2].toLocaleString(DateTime.TIME_SIMPLE), "", "Sunset\n" + xSunData[4].toLocaleString(DateTime.TIME_SIMPLE), "", ""]}
@@ -133,7 +136,7 @@ export default function Sun(props) {
                     
                 />
                 <VictoryAxis
-                    tickFormat={(v) => ""}
+                    tickFormat={() => ""}
                     tickValues={[xSunData[2].toUnixInteger(), xSunData[4].toUnixInteger()]}
                     style={{
                         axis: {
@@ -155,7 +158,9 @@ export default function Sun(props) {
 Sun.propTypes = {
     longitude: PropTypes.number.isRequired,
     latitude: PropTypes.number.isRequired,
-    timezone: PropTypes.string.isRequired
+    timezone: PropTypes.string.isRequired,
+    animationStagger: PropTypes.number,
+    loadingSpeed: PropTypes.number,
 };
 
 const styles = StyleSheet.create({

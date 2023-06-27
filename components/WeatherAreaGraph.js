@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { StyleSheet, Text, View, Dimensions, ScrollView} from "react-native";
-import { LineSegment, VictoryArea, VictoryAxis, VictoryChart, VictoryTheme } from "victory-native";
-import { getSunrise, getSunset } from "sunrise-sunset-js";
+import { VictoryLabel, VictoryArea, VictoryAxis, VictoryChart, VictoryLine, VictoryTheme } from "victory-native";
+import { DateTime } from "luxon";
+import { formatTime12 } from "../common/helper";
 
 export default function WeatherAreaGraph(props) {
     const [yData, setYData] = useState([]);
     const [xData, setXData] = useState([]);
+    const [animationStagger, setStagger] = useState(props.animationStagger ? props.animationStagger : 0);
 
     useEffect(() => {    
         setYData(props.yData);
@@ -20,6 +22,12 @@ export default function WeatherAreaGraph(props) {
     const Gradient = props.gradient;
 
     const seen = new Set();
+    const lineSeen = new Set();
+
+    const yDomain = [
+        Math.floor((Math.min(...yData) - 1) / 10)  * 10, 
+        Math.ceil((Math.max(...yData) + 1) / 10)  * 10
+    ];
 
     return (
         <View style={styles.container}> 
@@ -39,8 +47,7 @@ export default function WeatherAreaGraph(props) {
                     }}
                     domain={
                         {
-                            y: [Math.floor((Math.min(...yData) - 1) / 10)  * 10, 
-                                Math.ceil((Math.max(...yData) + 1) / 10)  * 10]
+                            y: yDomain
                         }
                     }
                 >
@@ -70,20 +77,25 @@ export default function WeatherAreaGraph(props) {
                             })
                         }
                         animate={{
-                            duration: 2000,
-                            onLoad: { duration: 3000 }
+                            duration: 1000,
+                            delay: animationStagger,
+                            onLoad: { duration: props.loadingSpeed },
+                            onEnd: () => setStagger(0)
                         }}
                         interpolation="catmullRom"
                     />
                     <VictoryAxis
                         tickCount={Math.floor(xData.length / 6)}
                         tickFormat={(t) => {
-                            if (seen.has(xData[t].split(" ")[0])) {
-                                return xData[t].split(" ")[1];
-                            } else {
-                                seen.add(xData[t].split(" ")[0]);
-                                return xData[t];
-                            }
+                            const date = xData[t];
+                            return formatTime12(date, false);
+                            // const dateValue = date.toLocaleString(DateTime.DATE_SHORT);
+                            // if (seen.has(dateValue)) {
+                            //     return formatTime12(date, false);
+                            // } else {
+                            //     seen.add(dateValue);
+                            //     return formatTime12(date, true);
+                            // }
                         }}
                         style={{
                             axis: {
@@ -94,6 +106,31 @@ export default function WeatherAreaGraph(props) {
                             }
                         }}
                     />
+                    {
+                        xData.map((val, idx) => {
+                            const date = val.toLocaleString(DateTime.DATE_SHORT);
+                            if (lineSeen.has(date)) {
+                                return (<React.Fragment key={`no-line-${idx}`}></React.Fragment>);
+                            }
+                            lineSeen.add(date);
+                            return (
+                                <VictoryLine
+                                    key={`line-${idx}`}
+                                    data={[
+                                        {x: idx, y: yDomain[0]},
+                                        {x: idx, y: yDomain[1]},
+                                    ]}
+                                    style={{
+                                        data: {
+                                            strokeWidth: 1,
+                                        }
+                                    }}
+                                    labels={["", `${val.month}/${val.day}`]}
+                                    labelComponent={<VictoryLabel dy={20} dx={20}/>}
+                                />
+                            );
+                        })
+                    }
                     <Gradient></Gradient>
                 </VictoryChart>
             </ScrollView>
@@ -109,6 +146,8 @@ WeatherAreaGraph.propTypes = {
     yLabel: PropTypes.string.isRequired,
     xLabel: PropTypes.string,
     gradient: PropTypes.func.isRequired,
+    animationStagger: PropTypes.number,
+    loadingSpeed: PropTypes.number,
 };
 
 const styles = StyleSheet.create({

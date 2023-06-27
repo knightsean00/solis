@@ -12,7 +12,7 @@ export default function CurrentWeather(props) {
             <View style={styles.childContainer}>
                 <Text style={styles.rightText}>Humidity: {props.weather.humidity}%</Text>
                 <Text style={styles.rightText}>Precipitation: {props.weather.probabilityOfPrecipitation.value}%</Text>
-                <Text style={styles.rightText}>Wind: {props.weather.windSpeed} {props.weather.windDirection} </Text>
+                <Text style={styles.rightText}>Wind: {props.weather.windSpeed.split(" ").join("")} {props.weather.windDirection} </Text>
             </View>
         </View>
 

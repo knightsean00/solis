@@ -1,8 +1,7 @@
 -sunset and sunrise package, insert lines in graph for respective times.
 -add gradients everywhere
 -dark mode && changing background based off nighttime or daytime
--lil emojis everywhere.
--precipitation graph 
+-lil emojis everywhere 
 -add option to choose different locations, swipe to see those locations have + in corner to add new location. 
 -weather alerts + hazards popup. 
 - have y axis albel offset scroll
