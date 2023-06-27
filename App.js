@@ -1,21 +1,18 @@
 import React, {useEffect, useState} from "react";
-import { ScrollView, View, ActivityIndicator, StyleSheet, Text } from "react-native";
+import { View, ActivityIndicator, StyleSheet, useColorScheme } from "react-native";
 import Constants from "expo-constants";
 import { StatusBar } from "expo-status-bar";
-// import { NavigationContainer } from "@react-navigation/native";
-// import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 // Forecast component
-import Forecast from "./routes/Forecast";
+import Locations from "./routes/Locations";
 import * as Location from "expo-location";
+import { getNOAALocation } from "./common/helper";
 
 // const Stack = createNativeStackNavigator();
 
 export default function App() {
     // In the future, we can just call the Forecast component with lat long fed int
     const [loading, setLoading] = useState(true);
-    const [latitude, setLatitude] = useState(null);
-    const [longitude, setLongitude] = useState(null);
     const [locationInformation, setLocationInformation] = useState(null);
 
     const setCurrentLocation = async () => {
@@ -27,24 +24,31 @@ export default function App() {
 
         let location = await Location.getCurrentPositionAsync({});
         if (location.coords) {
-            setLatitude(location.coords.latitude);
-            setLongitude(location.coords.longitude);
-
-            const reverseRes = (await Location.reverseGeocodeAsync({latitude: location.coords.latitude, longitude: location.coords.longitude}))[0];
+            const [noaa, reverseRes] = await Promise.all([
+                getNOAALocation(location.coords.latitude, location.coords.longitude),
+                Location.reverseGeocodeAsync({latitude: location.coords.latitude, longitude: location.coords.longitude})
+            ]);
             setLocationInformation({
-                city: reverseRes.city,
-                region: reverseRes.region,
-                country: reverseRes.country,
-                postalCode: reverseRes.postalCode
+                city: reverseRes[0].city,
+                region: reverseRes[0].region,
+                country: reverseRes[0].country,
+                postalCode: reverseRes[0].postalCode,
+                wfo: noaa.wfo,
+                x: noaa.x,
+                y: noaa.y,
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude
             });
             setLoading(false);
-            console.log("Received coordinates, loading location weather");
         }
     };
 
     useEffect(() => {
         setCurrentLocation();
     }, []);
+
+    // const colorScheme = useColorScheme();
+    // const themeContainer = colorScheme === "dark" ? styles.darkContainer : styles.lightContainer;
 
     if (loading) {
         return (
@@ -55,15 +59,10 @@ export default function App() {
     }
 
     return (
-        // <NavigationContainer>
-        //     <Stack.Navigator>
-        //         <Stack.Screen name="Forecast" component={Forecast} />
-        //     </Stack.Navigator>
-        // </NavigationContainer>
         <>
-            <ScrollView style={styles.parentContainer}>
-                <Forecast latitude={latitude} longitude={longitude} locationInformation={locationInformation} />
-            </ScrollView>
+            <View style={styles.parentContainer}>
+                <Locations locationInformation={locationInformation} />
+            </View>
             <StatusBar style="auto" />
         </>
         
@@ -72,7 +71,13 @@ export default function App() {
 
 const styles = StyleSheet.create({
     parentContainer: {
-        marginTop: Constants.statusBarHeight ? Constants.statusBarHeight * 1.2 : "5%"
+        marginTop: Constants.statusBarHeight ? Constants.statusBarHeight * 1.2 : "5%", 
+    },
+    darkContainer: {
+        backgroundColor: "#ffffff"
+    },
+    lightContainer: {
+        backgroundColor: "#000000" 
     },
     centered: {
         flex: 1,

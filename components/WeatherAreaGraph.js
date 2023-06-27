@@ -24,10 +24,10 @@ export default function WeatherAreaGraph(props) {
     const seen = new Set();
     const lineSeen = new Set();
 
-    const yDomain = [
+    const domain = props.domain ? props.domain : {y: [
         Math.floor((Math.min(...yData) - 1) / 10)  * 10, 
         Math.ceil((Math.max(...yData) + 1) / 10)  * 10
-    ];
+    ]};
 
     return (
         <View style={styles.container}> 
@@ -45,11 +45,7 @@ export default function WeatherAreaGraph(props) {
                         bottom: 30,
                         right: 20
                     }}
-                    domain={
-                        {
-                            y: yDomain
-                        }
-                    }
+                    domain={domain}
                 >
                     <VictoryAxis
                         dependentAxis={true}
@@ -76,12 +72,13 @@ export default function WeatherAreaGraph(props) {
                                 };
                             })
                         }
-                        animate={{
-                            duration: 1000,
-                            delay: animationStagger,
-                            onLoad: { duration: props.loadingSpeed },
-                            onEnd: () => setStagger(0)
-                        }}
+                        animate={false}
+                        // animate={{
+                        //     duration: 0,
+                        //     delay: animationStagger,
+                        //     onLoad: { duration: props.loadingSpeed },
+                        //     onEnd: () => setStagger(0)
+                        // }}
                         interpolation="catmullRom"
                     />
                     <VictoryAxis
@@ -117,8 +114,8 @@ export default function WeatherAreaGraph(props) {
                                 <VictoryLine
                                     key={`line-${idx}`}
                                     data={[
-                                        {x: idx, y: yDomain[0]},
-                                        {x: idx, y: yDomain[1]},
+                                        {x: idx, y: domain.y[0]},
+                                        {x: idx, y: domain.y[1]},
                                     ]}
                                     style={{
                                         data: {
@@ -148,6 +145,7 @@ WeatherAreaGraph.propTypes = {
     gradient: PropTypes.func.isRequired,
     animationStagger: PropTypes.number,
     loadingSpeed: PropTypes.number,
+    domain: PropTypes.any,
 };
 
 const styles = StyleSheet.create({

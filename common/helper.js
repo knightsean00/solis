@@ -46,8 +46,23 @@ export function takeEveryN(array, n) {
     return newArray;
 }
 
-// export function formatTimeLocale(date, offset) {
-//     const epochDate = date.getTime();
-//     const epochOffset = offset * 60000;
-//     return new Date(epochDate + epochOffset); // This will think it's in UTC
-// }
+export async function getNOAALocation(latitude, longitude) {
+    try {
+        const response = await fetch(`https://api.weather.gov/points/${latitude},${longitude}`, {
+            method: "GET",
+            headers: {
+                "User-Agent": "(knightsean00.github.io, knightsean00@gmail.com)"
+            }
+        });
+        const pointInfo = await response.json();
+        if (pointInfo) {
+            return {
+                wfo: pointInfo.properties.gridId,
+                x: pointInfo.properties.gridX,
+                y: pointInfo.properties.gridY
+            };
+        }
+    } catch (err) {
+        console.log(err);
+    }
+}

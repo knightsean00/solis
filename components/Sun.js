@@ -42,6 +42,11 @@ export default function Sun(props) {
         getSun(props);
     }, []);
 
+    useEffect(() => {
+        if (props.refreshing && sunData.solarNoon.toLocaleString(DateTime.DATE_SHORT) !== DateTime.now().toLocaleString(DateTime.DATE_SHORT))
+            getSun(props);
+    }, [props.refreshing]);
+
     if (loading) {
         return (
             <View style={styles.container}>
@@ -124,12 +129,13 @@ export default function Sun(props) {
                             };
                         })
                     }
-                    animate={{
-                        duration: 1000,
-                        delay: animationStagger,
-                        onLoad: { duration: props.loadingSpeed },
-                        onEnd: () => setStagger(0)
-                    }}
+                    animate={false}
+                    // animate={{
+                    //     duration: 0,
+                    //     delay: animationStagger,
+                    //     onLoad: { duration: props.loadingSpeed },
+                    //     onEnd: () => setStagger(0)
+                    // }}
                     interpolation="natural"
                     labels={["", "", "Sunrise\n" + xSunData[2].toLocaleString(DateTime.TIME_SIMPLE), "", "Sunset\n" + xSunData[4].toLocaleString(DateTime.TIME_SIMPLE), "", ""]}
                     labelComponent={<VictoryLabel dy={-60} />}
@@ -161,6 +167,7 @@ Sun.propTypes = {
     timezone: PropTypes.string.isRequired,
     animationStagger: PropTypes.number,
     loadingSpeed: PropTypes.number,
+    refreshing: PropTypes.bool
 };
 
 const styles = StyleSheet.create({

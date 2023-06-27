@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { StatusBar } from "expo-status-bar";
-import { ActivityIndicator, StyleSheet, Text, View, SafeAreaView, ScrollView} from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View, SafeAreaView, ScrollView, RefreshControl, Button, BackHandler } from "react-native";
 import { formatTime12, takeEveryN, formatTimeLabel } from "../common/helper";
 import { LinearGradient, Stop, Defs } from "react-native-svg";
 import { DateTime } from "luxon";
@@ -25,65 +25,97 @@ export default function Forecast(props) {
         "sun",
     ]);
 
-    const getLocationInformation = async (latitude, longitude) => {
-        try {
-            const response = await fetch(`https://api.weather.gov/points/${latitude},${longitude}`, {
-                method: "GET",
-                headers: {
-                    "User-Agent": "(knightsean00.github.io, knightsean00@gmail.com)"
-                }
-            });
-            const pointInfo = await response.json();
-            if (pointInfo) {
-                const wfo = pointInfo.properties.gridId;
-                const x = pointInfo.properties.gridX;
-                const y = pointInfo.properties.gridY;
-                await getWeatherConditions(wfo, x, y);
-            }
-        } catch (err) {
-            console.log(err);
-        }
-    };
+    useEffect(() => {
+        setForecast(props.forecast);
 
-
-    const getWeatherConditions = async (wfo, x, y) => {
-        try {
-            const response = await fetch(`https://api.weather.gov/gridpoints/${wfo}/${x},${y}/forecast/hourly`, {
-                method: "GET",
-                headers: {
-                    "User-Agent": "(knightsean00.github.io, knightsean00@gmail.com)",
-                    // "Feature-Flags": ["forecast_temperature_qv", "forecast_wind_speed_qv"]
-                }
-            });
-            const gridInfo = await response.json();
-            
-            if (gridInfo) {
-                setForecast(gridInfo.properties.periods.map((period) => {
-                    return {
-                        temperature: period.temperature,
-                        temperatureUnit: period.temperatureUnit,
-                        probabilityOfPrecipitation: period.probabilityOfPrecipitation,
-                        windSpeed: period.windSpeed,
-                        windDirection: period.windDirection,
-                        shortForecast: period.shortForecast,
-                        humidity: period.relativeHumidity.value,
-                        startTime: DateTime.fromISO(period.startTime),
-                        endTime: DateTime.fromISO(period.endTime),
-                    };
-                }));
-                setLoading(false);
-            }
-            
-        } catch (err) {
-            // console.log(err);
-        }
-    };
+        const backAction = () => {
+            props.return();
+            return true;
+        };
+      
+        const backHandler = BackHandler.addEventListener(
+            "hardwareBackPress",
+            backAction,
+        );
+      
+        return () => backHandler.remove();
+    }, []);
 
     useEffect(() => {
-        if (props.latitude && props.longitude) {
-            getLocationInformation(props.latitude, props.longitude);
+        if (forecast.length > 0) {
+            setLoading(false);
         }
-    }, [props.latitude, props.longitude]);
+        
+    }, [forecast]);
+    
+    // const [refreshing, setRefreshing] = useState(false);
+
+    // const onRefresh = () => {
+    //     setRefreshing(true);
+    //     getLocationInformation(props.latitude, props.longitude).then(() => {
+    //         setRefreshing(false);
+    //     });
+    // };
+
+    // const getLocationInformation = async (latitude, longitude) => {
+    //     try {
+    //         const response = await fetch(`https://api.weather.gov/points/${latitude},${longitude}`, {
+    //             method: "GET",
+    //             headers: {
+    //                 "User-Agent": "(knightsean00.github.io, knightsean00@gmail.com)"
+    //             }
+    //         });
+    //         const pointInfo = await response.json();
+    //         if (pointInfo) {
+    //             const wfo = pointInfo.properties.gridId;
+    //             const x = pointInfo.properties.gridX;
+    //             const y = pointInfo.properties.gridY;
+    //             await getWeatherConditions(wfo, x, y);
+    //         }
+    //     } catch (err) {
+    //         console.log(err);
+    //     }
+    // };
+
+
+    // const getWeatherConditions = async (wfo, x, y) => {
+    //     try {
+    //         const response = await fetch(`https://api.weather.gov/gridpoints/${wfo}/${x},${y}/forecast/hourly`, {
+    //             method: "GET",
+    //             headers: {
+    //                 "User-Agent": "(knightsean00.github.io, knightsean00@gmail.com)",
+    //                 // "Feature-Flags": ["forecast_temperature_qv", "forecast_wind_speed_qv"]
+    //             }
+    //         });
+    //         const gridInfo = await response.json();
+            
+    //         if (gridInfo) {
+    //             setForecast(gridInfo.properties.periods.map((period) => {
+    //                 return {
+    //                     temperature: period.temperature,
+    //                     temperatureUnit: period.temperatureUnit,
+    //                     probabilityOfPrecipitation: period.probabilityOfPrecipitation,
+    //                     windSpeed: period.windSpeed,
+    //                     windDirection: period.windDirection,
+    //                     shortForecast: period.shortForecast,
+    //                     humidity: period.relativeHumidity.value,
+    //                     startTime: DateTime.fromISO(period.startTime),
+    //                     endTime: DateTime.fromISO(period.endTime),
+    //                 };
+    //             }));
+    //             setLoading(false);
+    //         }
+            
+    //     } catch (err) {
+    //         // console.log(err);
+    //     }
+    // };
+
+    // useEffect(() => {
+    //     if (props.latitude && props.longitude) {
+    //         getLocationInformation(props.latitude, props.longitude);
+    //     }
+    // }, [props.latitude, props.longitude]);
 
 
     let text = "";
@@ -110,10 +142,11 @@ export default function Forecast(props) {
         sun: {
             component: Sun,
             props: {
-                longitude: props.longitude,
-                latitude: props.latitude,
+                longitude: props.locationInformation.longitude,
+                latitude: props.locationInformation.latitude,
                 timezone: forecast[0].endTime.zoneName,
                 loadingSpeed: 2000,
+                // refreshing: refreshing
             }
         },
         precipitation: {
@@ -139,6 +172,9 @@ export default function Forecast(props) {
                 yData: forecast.map(period => Number(period.windSpeed.split(" ")[0])).slice(0, maxSlice),
                 gradient: WindSpeedGradient,
                 loadingSpeed: 500,
+                domain: {
+                    y: [0, Math.max(...forecast.map(period => Number(period.windSpeed.split(" ")[0])).slice(0, maxSlice))]
+                }
             }
         },
         humidity: {
@@ -149,6 +185,7 @@ export default function Forecast(props) {
                 // xData: formatTimeLabel(forecast.map(period => period.endTime).slice(0, maxSlice)),
                 xData: forecast.map(period => period.endTime).slice(0, maxSlice),
                 yData: forecast.map(period => period.humidity).slice(0, maxSlice),
+                domain: percentDomain,
                 gradient: HumidityGradient,
                 loadingSpeed: 2000,
             }
@@ -169,7 +206,13 @@ export default function Forecast(props) {
 
     let cumulativeDelay = 0;
     return (
-        <View style={styles.container}>
+        <ScrollView 
+            style={styles.container} 
+            showsVerticalScrollIndicator={false}
+            // refreshControl={
+            //     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            // }
+        >
             <Text style={styles.headerText} numberOfLines={1} adjustsFontSizeToFit>{text}</Text>
             <CurrentWeather weather={forecast[0]}/>
             {
@@ -182,7 +225,12 @@ export default function Forecast(props) {
                         animationStagger: delay});
                 })
             }
-        </View>
+            <Button
+                onPress={props.return}
+                title="Back"
+                color="#841584"
+            />
+        </ScrollView>
     );
 }
 
@@ -225,7 +273,8 @@ const PrecipitationGradient = () => (
 
 const styles = StyleSheet.create({
     container: {
-        marginHorizontal: "2%"
+        marginHorizontal: "2%",
+        marginBottom: "3%"
     },
     headerText: {
         fontSize: 32,
@@ -234,7 +283,7 @@ const styles = StyleSheet.create({
 }); 
 
 Forecast.propTypes = {
-    latitude: PropTypes.number,
-    longitude: PropTypes.number,
-    locationInformation: PropTypes.object
+    forecast: PropTypes.array,
+    locationInformation: PropTypes.object,
+    return: PropTypes.func
 };

@@ -67,12 +67,13 @@ export default function WeatherBarGraph(props) {
                                 };
                             })
                         }
-                        animate={{
-                            duration: 500,
-                            delay: animationStagger,
-                            onLoad: { duration: props.loadingSpeed },
-                            onEnd: () => setStagger(0)
-                        }}
+                        animate={false}
+                        // animate={{
+                        //     duration: 0,
+                        //     delay: animationStagger,
+                        //     onLoad: { duration: props.loadingSpeed },
+                        //     onEnd: () => setStagger(0)
+                        // }}
                     />
                     <VictoryAxis
                         tickCount={Math.floor(xData.length / 6)}
