@@ -5,7 +5,11 @@ import { View, Text, ActivityIndicator, StyleSheet, Pressable } from "react-nati
 export default function LocationTile(props) {
     return (
         <Pressable
-            onPress={() => props.chooseLocation(props.locationInformation)}
+            onPress={() => {
+                if (props.temperature != null) {
+                    props.chooseLocation(props.locationIndex);
+                }
+            }}
             style={({pressed}) => [
                 {
                     backgroundColor: pressed ? "#eeeeee" : "#ffffff",
@@ -33,8 +37,7 @@ export default function LocationTile(props) {
                         <Text style={{textAlign: "left", fontSize: 10}}>Current Location</Text>
                     </View> :
                     <></>
-            }
-            
+            }      
         </Pressable>
     );
 }
@@ -43,6 +46,7 @@ const styles = StyleSheet.create({
     tile: {
         paddingVertical: "5%",
         paddingHorizontal: "3%",
+        marginVertical: "2%",
 
         borderRadius: 10,
         borderColor: "#cccccc",
@@ -74,6 +78,7 @@ const styles = StyleSheet.create({
 
 LocationTile.propTypes = {
     locationInformation: PropTypes.object,
+    locationIndex: PropTypes.number,
     temperature: PropTypes.number,
     temperatureType: PropTypes.string,
     weather: PropTypes.string,

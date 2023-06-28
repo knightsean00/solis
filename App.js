@@ -4,9 +4,10 @@ import Constants from "expo-constants";
 import { StatusBar } from "expo-status-bar";
 
 // Forecast component
-import Locations from "./routes/Locations";
+import Locations from "./routes/Locations"; 
+import LookUp from "./components/LookUp";
 import * as Location from "expo-location";
-import { getNOAALocation } from "./common/helper";
+import { getLocationInformation, getNOAALocation } from "./common/helper";
 
 // const Stack = createNativeStackNavigator();
 
@@ -24,21 +25,8 @@ export default function App() {
 
         let location = await Location.getCurrentPositionAsync({});
         if (location.coords) {
-            const [noaa, reverseRes] = await Promise.all([
-                getNOAALocation(location.coords.latitude, location.coords.longitude),
-                Location.reverseGeocodeAsync({latitude: location.coords.latitude, longitude: location.coords.longitude})
-            ]);
-            setLocationInformation({
-                city: reverseRes[0].city,
-                region: reverseRes[0].region,
-                country: reverseRes[0].country,
-                postalCode: reverseRes[0].postalCode,
-                wfo: noaa.wfo,
-                x: noaa.x,
-                y: noaa.y,
-                latitude: location.coords.latitude,
-                longitude: location.coords.longitude
-            });
+            const res = await getLocationInformation(location.coords.latitude, location.coords.longitude);
+            setLocationInformation(res);
             setLoading(false);
         }
     };

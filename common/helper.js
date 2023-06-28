@@ -1,3 +1,5 @@
+import * as Location from "expo-location";
+
 export function cToF(celsius) {
     return celsius * (9 / 5) + 32;
 }
@@ -65,4 +67,22 @@ export async function getNOAALocation(latitude, longitude) {
     } catch (err) {
         console.log(err);
     }
+}
+
+export async function getLocationInformation(latitude, longitude) {
+    const [noaa, reverseRes] = await Promise.all([
+        getNOAALocation(latitude, longitude),
+        Location.reverseGeocodeAsync({latitude: latitude, longitude: longitude})
+    ]);
+    return {
+        city: reverseRes[0].city,
+        region: reverseRes[0].region,
+        country: reverseRes[0].country,
+        postalCode: reverseRes[0].postalCode,
+        wfo: noaa.wfo,
+        x: noaa.x,
+        y: noaa.y,
+        latitude: latitude,
+        longitude: longitude
+    };
 }

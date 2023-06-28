@@ -230,6 +230,16 @@ export default function Forecast(props) {
                 title="Back"
                 color="#841584"
             />
+            {
+                props.removeLocation ? 
+                    <Button
+                        onPress={() => {props.removeLocation(); props.return();}}
+                        title={`Remove ${props.locationInformation.city}`}
+                        color="#d43c48"
+                    /> :
+                    <></>
+            }
+            
         </ScrollView>
     );
 }
@@ -285,5 +295,6 @@ const styles = StyleSheet.create({
 Forecast.propTypes = {
     forecast: PropTypes.array,
     locationInformation: PropTypes.object,
-    return: PropTypes.func
+    return: PropTypes.func,
+    removeLocation: PropTypes.func
 };

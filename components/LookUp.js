@@ -1,29 +1,57 @@
 import React , {useState} from "react";
 import PropTypes from "prop-types";
-import { View, Text, TextInput, StyleSheet  } from "react-native";
+import { View, TextInput, StyleSheet, Alert,  } from "react-native";
+import * as Location from "expo-location";
+import { getLocationInformation } from "../common/helper";
+
 
 export default function LookUp(props) {
-    const [text, setText] = useState("");
+    const [input, setInput] = useState("");
+
+    const handleSubmit = () => {
+        Location.geocodeAsync(input + " USA").then((res) => {
+            if (res.length > 0) {
+                getLocationInformation(res[0].latitude, res[0].longitude).then(res1 => {
+                    props.addLocation(res1);
+                });
+            } else {
+                Alert.alert(null, "No locations with that description have been found");
+            }
+            setInput("");
+        });
+    };
 
     return (
-        <View>
+        <View style={styles.container}>
             <TextInput
-                placeholder="Look Up A Location!"
-                onChangeText={newText => setText(newText)}
-                defaultValue={text}
+                placeholder="Search locations"
+                onChangeText={setInput}
+                value={input}
+                onSubmitEditing={handleSubmit}
+                style={styles.inputStyle}
+                returnKeyLabel="search"
             />
         </View>
     );
 }
+// console.log(value);
 
 const styles = StyleSheet.create({
-    tile: {
-        paddingVertical: "5%",
-        paddingHorizontal: "3%",
-
+    container: {
+        paddingTop: "5%",
+        paddingBottom: "8%",
+        justifyContent: "center",
+        alignItems:"center"
+    },
+    inputStyle: {
         borderRadius: 10,
         borderColor: "#cccccc",
         borderWidth: 1,
+        paddingVertical: "2.5%",
+        paddingHorizontal: "3%",
+        minWidth: "75%",
+        maxWidth: "75%",
+        textAlign: "left"
     },
     row: {
         flexDirection: "row",
@@ -43,5 +71,6 @@ const styles = StyleSheet.create({
 });
 
 LookUp.propTypes = {
+    addLocation: PropTypes.func
 };
 
