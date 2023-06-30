@@ -23,6 +23,12 @@ export default function WeatherBarGraph(props) {
 
     const seen = new Set();
     const lineSeen = new Set();
+    const divisibleBy = 5;
+
+    const domain = props.domain ? props.domain : {y: [
+        Math.floor((Math.min(...yData) - 1) / divisibleBy)  * divisibleBy, 
+        Math.ceil((Math.max(...yData) + 1) / divisibleBy)  * divisibleBy
+    ]};
 
     return (
         <View style={styles.container}> 
@@ -40,7 +46,7 @@ export default function WeatherBarGraph(props) {
                         bottom: 30,
                         right: 20
                     }}
-                    domain={props.domain ? props.domain : undefined}
+                    domain={props.domain ? props.domain : domain}
                 >
                     <VictoryAxis
                         dependentAxis={true}

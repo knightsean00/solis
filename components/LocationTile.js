@@ -1,6 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
-import { View, Text, ActivityIndicator, StyleSheet, Pressable } from "react-native";
+import { View, Text, ActivityIndicator, StyleSheet, Pressable, Alert } from "react-native";
 
 export default function LocationTile(props) {
     return (
@@ -10,12 +10,31 @@ export default function LocationTile(props) {
                     props.chooseLocation(props.locationIndex);
                 }
             }}
+            onLongPress={() => {
+                if (!props.currentLocation) {
+                    Alert.alert(
+                        null,
+                        `Do you want to delete weather data for ${props.locationInformation.city}`,
+                        [
+                            {
+                                text: "Yes",
+                                onPress: () => props.removeLocation(props.locationIndex)
+                            },
+                            {
+                                text: "No",
+                                style: "cancel"
+                            },
+                        ],
+                        {cancelable: true}
+                    );
+                }
+            }}
             style={({pressed}) => [
                 {
                     backgroundColor: pressed ? "#eeeeee" : "#ffffff",
                 }, styles.tile
             ]}
-        >
+        > 
             <View style={styles.row}>
                 <View style={styles.leftContainer}>
                     <Text style={styles.name}>{props.locationInformation.city}</Text>
@@ -83,66 +102,6 @@ LocationTile.propTypes = {
     temperatureType: PropTypes.string,
     weather: PropTypes.string,
     currentLocation: PropTypes.bool,
-    chooseLocation: PropTypes.func
+    chooseLocation: PropTypes.func,
+    removeLocation: PropTypes.func
 };
-
-
-// import React from "react";
-// import PropTypes from "prop-types";
-// import { View, Text, ActivityIndicator } from "react-native";
-// import { StyleSheet } from "react-native";
-
-// export default function LocationTile(props) {
-//     return (
-//         <View style={styles.container}>
-//             <View style = {styles.top} />
-//             <View style = {styles.middle} />
-//             <View style = {styles.bottom} /><Text style={styles.temperature}>{props.locationTemperature}{props.temperatureType}</Text> :
-//                     <ActivityIndicator size="large" color="#ffffff"/>
-//             }
-            
-//         </View>
-//     );;
-// };
-
-// const styles = StyleSheet.create({
-//     tile: {
-//         padding: "1%",
-
-//         borderRadius: 5,
-//         borderColor: "#aaaaaa",
-//         borderWidth: 1,
-
-//         flexDirection: "row",
-//     },
-//     name: {
-//         fontSize: 16,
-//         fontFamily: "bold",
-//         flex: 3
-//     },
-//     te({
-//     container: {
-//         flexP: 1,
-//         justifyContent: 'space-between',
-//         backgroundColor: '#2a9abb',
-//         padding: 20,
-//         margin: 10,
-//     },
-//     middle: {
-//         flexP: 1,
-//         justifyContent: 'space-between',
-//         backgroundColor: '#2a9abb',
-//         padding: 20,
-//         margin: 10,
-//     },
-// });mperature: {
-//         fontSize: 18,
-//         flex: 1
-//     }
-// });
-
-// LocationTile.propTypes = {
-//     locationName: PropTypes.string,
-//     locationTemperature: PropTypes.any,
-//     temperatureType: PropTypes.string
-// };

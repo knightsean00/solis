@@ -23,10 +23,11 @@ export default function WeatherAreaGraph(props) {
 
     const seen = new Set();
     const lineSeen = new Set();
+    const divisibleBy = 50;
 
     const domain = props.domain ? props.domain : {y: [
-        Math.floor((Math.min(...yData) - 1) / 10)  * 10, 
-        Math.ceil((Math.max(...yData) + 1) / 10)  * 10
+        Math.floor((Math.min(...yData) - 1) / divisibleBy)  * divisibleBy, 
+        Math.ceil((Math.max(...yData) + 1) / divisibleBy)  * divisibleBy
     ]};
 
     return (

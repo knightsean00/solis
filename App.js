@@ -1,13 +1,12 @@
 import React, {useEffect, useState} from "react";
-import { View, ActivityIndicator, StyleSheet, useColorScheme } from "react-native";
+import { View, ActivityIndicator, StyleSheet } from "react-native";
 import Constants from "expo-constants";
 import { StatusBar } from "expo-status-bar";
 
 // Forecast component
 import Locations from "./routes/Locations"; 
-import LookUp from "./components/LookUp";
 import * as Location from "expo-location";
-import { getLocationInformation, getNOAALocation } from "./common/helper";
+import { getLocationInformation } from "./common/helper";
 
 // const Stack = createNativeStackNavigator();
 

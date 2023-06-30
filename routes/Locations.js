@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { View, StyleSheet, ScrollView, RefreshControl, } from "react-native";
 import LocationTile from "../components/LocationTile";
 import LookUp from "../components/LookUp";
 import Forecast from "./Forecast";
 
 import { DateTime } from "luxon";
+import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
+import { getAllWeatherConditions, getLocationInformation } from "../common/helper";
 
 export default function Locations(props) {
     const [locationInformation, setLocationInformation] = useState([props.locationInformation]);
     const [forecastInformation, setForecastInformation] = useState({});
     const [chosenLocation, setChosenLocation] = useState(null);
+    const [refreshing, setRefreshing] = useState(false);
 
     const addLocation = (newLocation) => {
         for (const location of locationInformation.slice(1)) {
@@ -37,7 +40,7 @@ export default function Locations(props) {
         const cityName = locationInformation[locationIndex].city;
         const newLocationInformation = locationInformation.slice(0, locationIndex).concat(locationInformation.slice(locationIndex + 1));
         setLocationInformation(newLocationInformation);
-        storeLocations(locationInformation.slice(1)).then(() => {
+        storeLocations(newLocationInformation.slice(1)).then(() => {
             console.log(`Successfully removed ${cityName}`);
         }).catch(err => {
             console.log(`Error removing ${cityName}`);
@@ -65,37 +68,11 @@ export default function Locations(props) {
         }
     };
 
-    const getWeatherConditions = async (locationInfo) => {
-        try {
-            const response = await fetch(`https://api.weather.gov/gridpoints/${locationInfo.wfo}/${locationInfo.x},${locationInfo.y}/forecast/hourly`, {
-                method: "GET",
-                headers: {
-                    "User-Agent": "(knightsean00.github.io, knightsean00@gmail.com)",
-                    // "Feature-Flags": ["forecast_temperature_qv", "forecast_wind_speed_qv"]
-                }
-            });
-            const gridInfo = await response.json();
-            
-            if (gridInfo) {
-                return gridInfo.properties.periods.map((period) => {
-                    return {
-                        temperature: period.temperature,
-                        temperatureUnit: period.temperatureUnit,
-                        probabilityOfPrecipitation: period.probabilityOfPrecipitation,
-                        windSpeed: period.windSpeed,
-                        windDirection: period.windDirection,
-                        shortForecast: period.shortForecast,
-                        humidity: period.relativeHumidity.value,
-                        startTime: DateTime.fromISO(period.startTime),
-                        endTime: DateTime.fromISO(period.endTime),
-                    };
-                });
-            }
-            
-        } catch (err) {
-            console.log(`Error getting information for ${locationInfo.city}`);
-            console.log(err);
-        }
+    const onRefresh = () => {
+        getAllWeatherConditions(locationInformation).then(res => {
+            setForecastInformation(res);
+            setRefreshing(false);
+        });
     };
 
     useEffect(() => {
@@ -104,33 +81,43 @@ export default function Locations(props) {
     }, []);
 
     useEffect(() => {
-        Promise.all(locationInformation.map(location => getWeatherConditions(location))).then(res => {
-            const output = {};
-            res.forEach((val, idx) => {
-                output[`${locationInformation[idx].city}-${locationInformation[idx].wfo}-${locationInformation[idx].x}-${locationInformation[idx].y}`] = val;
-            });
-            setForecastInformation(output);
+        getAllWeatherConditions(locationInformation).then(res => {
+            setForecastInformation(res);
         });
     }, [locationInformation]);
 
     if (chosenLocation != null) {
-        const key = `${locationInformation[chosenLocation].city}-${locationInformation[chosenLocation].wfo}-${locationInformation[chosenLocation].x}-${locationInformation[chosenLocation].y}`
+        const key = `${locationInformation[chosenLocation].city}-${locationInformation[chosenLocation].wfo}-${locationInformation[chosenLocation].x}-${locationInformation[chosenLocation].y}`;
         return (
-            <Forecast 
-                locationInformation={locationInformation[chosenLocation]}
-                forecast={forecastInformation[key]}
-                return={() => setChosenLocation(null)}
-                removeLocation={
-                    chosenLocation > 0 ?
-                        () => removeLocation(chosenLocation) :
-                        null
+            <ScrollView 
+                style={styles.container}
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
                 }
-            />
+            >
+                <Forecast 
+                    locationInformation={locationInformation[chosenLocation]}
+                    forecast={forecastInformation[key]}
+                    return={() => setChosenLocation(null)}
+                    removeLocation={
+                        chosenLocation > 0 ?
+                            () => removeLocation(chosenLocation) :
+                            null
+                    }
+                />
+            </ScrollView>
         );
     }
 
     return ( 
-        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+            style={styles.container}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+        >
             <LookUp 
                 addLocation={addLocation}
             />
@@ -148,6 +135,7 @@ export default function Locations(props) {
                                 weather={forecastInformation[key][0].shortForecast}
                                 currentLocation={idx === 0}
                                 chooseLocation={setChosenLocation}
+                                removeLocation={removeLocation}
                             />
                         );
                     }
@@ -159,6 +147,7 @@ export default function Locations(props) {
                             temperature={null} 
                             currentLocation={idx === 0}
                             chooseLocation={setChosenLocation}
+                            removeLocation={removeLocation}
                         />
                     );
                 })

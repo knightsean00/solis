@@ -5,12 +5,15 @@ import { ActivityIndicator, StyleSheet, Text, View, SafeAreaView, ScrollView, Re
 import { formatTime12, takeEveryN, formatTimeLabel } from "../common/helper";
 import { LinearGradient, Stop, Defs } from "react-native-svg";
 import { DateTime } from "luxon";
+import chroma from "chroma-js";
 
 // Graph component
 import WeatherAreaGraph from "../components/WeatherAreaGraph";
 import Sun from "../components/Sun";
 import CurrentWeather from "../components/CurrentWeather";
 import WeatherBarGraph from "../components/WeatherBarGraph";
+import HourlyWeather from "../components/HourlyWeather";
+import WeatherForecast from "../components/WeatherForecast";
 
 
 export default function Forecast(props) {
@@ -18,6 +21,8 @@ export default function Forecast(props) {
     const [errorMsg, setErrorMsg] = useState(null);
     const [forecast, setForecast] = useState([]);
     const [moduleOrder, setModuleOrder] = useState([
+        "hourly",
+        "daily",
         "temperature",
         "precipitation",
         "windSpeed",
@@ -45,78 +50,7 @@ export default function Forecast(props) {
         if (forecast.length > 0) {
             setLoading(false);
         }
-        
     }, [forecast]);
-    
-    // const [refreshing, setRefreshing] = useState(false);
-
-    // const onRefresh = () => {
-    //     setRefreshing(true);
-    //     getLocationInformation(props.latitude, props.longitude).then(() => {
-    //         setRefreshing(false);
-    //     });
-    // };
-
-    // const getLocationInformation = async (latitude, longitude) => {
-    //     try {
-    //         const response = await fetch(`https://api.weather.gov/points/${latitude},${longitude}`, {
-    //             method: "GET",
-    //             headers: {
-    //                 "User-Agent": "(knightsean00.github.io, knightsean00@gmail.com)"
-    //             }
-    //         });
-    //         const pointInfo = await response.json();
-    //         if (pointInfo) {
-    //             const wfo = pointInfo.properties.gridId;
-    //             const x = pointInfo.properties.gridX;
-    //             const y = pointInfo.properties.gridY;
-    //             await getWeatherConditions(wfo, x, y);
-    //         }
-    //     } catch (err) {
-    //         console.log(err);
-    //     }
-    // };
-
-
-    // const getWeatherConditions = async (wfo, x, y) => {
-    //     try {
-    //         const response = await fetch(`https://api.weather.gov/gridpoints/${wfo}/${x},${y}/forecast/hourly`, {
-    //             method: "GET",
-    //             headers: {
-    //                 "User-Agent": "(knightsean00.github.io, knightsean00@gmail.com)",
-    //                 // "Feature-Flags": ["forecast_temperature_qv", "forecast_wind_speed_qv"]
-    //             }
-    //         });
-    //         const gridInfo = await response.json();
-            
-    //         if (gridInfo) {
-    //             setForecast(gridInfo.properties.periods.map((period) => {
-    //                 return {
-    //                     temperature: period.temperature,
-    //                     temperatureUnit: period.temperatureUnit,
-    //                     probabilityOfPrecipitation: period.probabilityOfPrecipitation,
-    //                     windSpeed: period.windSpeed,
-    //                     windDirection: period.windDirection,
-    //                     shortForecast: period.shortForecast,
-    //                     humidity: period.relativeHumidity.value,
-    //                     startTime: DateTime.fromISO(period.startTime),
-    //                     endTime: DateTime.fromISO(period.endTime),
-    //                 };
-    //             }));
-    //             setLoading(false);
-    //         }
-            
-    //     } catch (err) {
-    //         // console.log(err);
-    //     }
-    // };
-
-    // useEffect(() => {
-    //     if (props.latitude && props.longitude) {
-    //         getLocationInformation(props.latitude, props.longitude);
-    //     }
-    // }, [props.latitude, props.longitude]);
-
 
     let text = "";
     if (errorMsg) {
@@ -137,8 +71,26 @@ export default function Forecast(props) {
     const percentDomain = {
         y: [0, 100]
     };
+    const tempDomain = {
+        y: [
+            Math.floor((Math.min(...forecast.map(period => period.temperature).slice(0, maxSlice)) - 1) / 50)  * 50, 
+            Math.ceil((Math.max(...forecast.map(period => period.temperature).slice(0, maxSlice)) + 1) / 50)  * 50
+        ]
+    };
 
     const weatherModuleTypes = {
+        hourly: {
+            component: HourlyWeather,
+            props: {
+                forecast: forecast.slice(0,24)
+            }
+        },
+        daily: {
+            component: WeatherForecast,
+            props: {
+                forecast: forecast
+            }
+        },
         sun: {
             component: Sun,
             props: {
@@ -173,7 +125,10 @@ export default function Forecast(props) {
                 gradient: WindSpeedGradient,
                 loadingSpeed: 500,
                 domain: {
-                    y: [0, Math.max(...forecast.map(period => Number(period.windSpeed.split(" ")[0])).slice(0, maxSlice))]
+                    y: [
+                        0, 
+                        Math.ceil((Math.max(...forecast.map(period => Number(period.windSpeed.split(" ")[0])).slice(0, maxSlice)) + 1) / 5) * 5
+                    ]
                 }
             }
         },
@@ -198,7 +153,8 @@ export default function Forecast(props) {
                 // xData: formatTimeLabel(forecast.map(period => period.endTime).slice(0, maxSlice)),
                 xData: forecast.map(period => period.endTime).slice(0, maxSlice),
                 yData: forecast.map(period => period.temperature).slice(0, maxSlice),
-                gradient: TemperatureGradient,
+                domain: tempDomain,
+                gradient: TemperatureGradientBuilder(tempDomain.y[0], tempDomain.y[1], 0, 100),
                 loadingSpeed: 2000,
             },
         },
@@ -206,9 +162,8 @@ export default function Forecast(props) {
 
     let cumulativeDelay = 0;
     return (
-        <ScrollView 
+        <View 
             style={styles.container} 
-            showsVerticalScrollIndicator={false}
             // refreshControl={
             //     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             // }
@@ -225,37 +180,56 @@ export default function Forecast(props) {
                         animationStagger: delay});
                 })
             }
-            <Button
-                onPress={props.return}
-                title="Back"
-                color="#841584"
-            />
-            {
-                props.removeLocation ? 
+            <View style={{width:"45%", alignSelf:"center"}}>
+                <View style={{marginBottom: "10%"}}>
                     <Button
-                        onPress={() => {props.removeLocation(); props.return();}}
-                        title={`Remove ${props.locationInformation.city}`}
-                        color="#d43c48"
-                    /> :
-                    <></>
-            }
-            
-        </ScrollView>
+                        onPress={props.return}
+                        title="Back"
+                        color="#841584"
+                    />
+                </View>
+                {
+                    props.removeLocation ? 
+                        <View style={{marginBottom: "5%"}} >
+                            <Button
+                                onPress={() => {props.removeLocation(); props.return();}}
+                                title={`Remove ${props.locationInformation.city}`}
+                                color="#d43c48"
+                            />
+                        </View> :
+                        <></>
+                }
+            </View>
+        </View>
     );
 }
 
-const TemperatureGradient = () => (
-    <Defs key={"gradient"}>
-        <LinearGradient id={"gradient"} x1={"0%"} y={"0%"} x2={"0%"} y2={"100%"}>
-            <Stop offset={"0%"} stopColor={"#ff0000"} stopOpacity={.25}/>
-            <Stop offset={"100%"} stopColor={"#001aff"} stopOpacity={.25}/>
-        </LinearGradient>
-    </Defs>
-);
+const TemperatureGradientBuilder = (yMin, yMax, min, max) => {
+    const percentageYMin = Math.max(Math.min((yMin - min) / (max - min), 1), 0);
+    const percentageYMax = Math.max(Math.min((yMax - min) / (max - min), 1), 0);
+
+    const scale = chroma.scale(["#4700a3", "#0012ff", "#ff67a0", "#ff8839", "#ff3700", "#ff0000", "#5b0000"]);
+
+    // console.log(percentageYMax);
+    // console.log(percentageYMin);
+    const TemperatureGradient = () => (
+        <Defs key={"gradient"}>
+            <LinearGradient id={"gradient"} x1={"0%"} y1={"0%"} x2={"0%"} y2={"100%"}>
+                <Stop offset={"0%"} stopColor={`${scale(percentageYMax).hex()}`} stopOpacity={.25}/>
+                <Stop offset={"100%"} stopColor={`${scale(percentageYMin).hex()}`} stopOpacity={.25}/>
+            </LinearGradient>
+        </Defs>
+    );
+    return TemperatureGradient;
+};
+
+// const TemperatureGradient = () => (
+    
+// );
 
 const HumidityGradient = () => (
     <Defs key={"gradient"}>
-        <LinearGradient id={"gradient"} x1={"0%"} y={"0%"} x2={"0%"} y2={"100%"}>
+        <LinearGradient id={"gradient"} x1={"0%"} y1={"0%"} x2={"0%"} y2={"100%"}>
             <Stop offset={"0%"} stopColor={"#219fdf"} stopOpacity={.5}/>
             <Stop offset={"100%"} stopColor={"#219fdf"} stopOpacity={0}/>
         </LinearGradient>
@@ -264,7 +238,7 @@ const HumidityGradient = () => (
 
 const WindSpeedGradient = () => (
     <Defs key={"gradient"}>
-        <LinearGradient id={"gradient"} x1={"0%"} y={"0%"} x2={"0%"} y2={"100%"}>
+        <LinearGradient id={"gradient"} x1={"0%"} y1={"0%"} x2={"0%"} y2={"100%"}>
             <Stop offset={"0%"} stopColor={"#5a5783"} stopOpacity={1}/>
             <Stop offset={"100%"} stopColor={"#5a5783"} stopOpacity={1}/>
         </LinearGradient>
@@ -273,7 +247,7 @@ const WindSpeedGradient = () => (
 
 const PrecipitationGradient = () => (
     <Defs key={"gradient"}>
-        <LinearGradient id={"gradient"} x1={"0%"} y={"0%"} x2={"0%"} y2={"100%"}>
+        <LinearGradient id={"gradient"} x1={"0%"} y1={"0%"} x2={"0%"} y2={"100%"}>
             <Stop offset={"0%"} stopColor={"#219fdf"} stopOpacity={1}/>
             <Stop offset={"100%"} stopColor={"#219fdf"} stopOpacity={1}/>
         </LinearGradient>
@@ -283,8 +257,7 @@ const PrecipitationGradient = () => (
 
 const styles = StyleSheet.create({
     container: {
-        marginHorizontal: "2%",
-        marginBottom: "3%"
+        marginHorizontal: "2%"
     },
     headerText: {
         fontSize: 32,
