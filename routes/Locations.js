@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { View, StyleSheet, ScrollView, RefreshControl, } from "react-native";
+import { StyleSheet, ScrollView, RefreshControl, } from "react-native";
 import LocationTile from "../components/LocationTile";
 import LookUp from "../components/LookUp";
 import Forecast from "./Forecast";
-
-import { DateTime } from "luxon";
-import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
-import { getAllWeatherConditions, getLocationInformation } from "../common/helper";
+import { getAllWeatherConditions } from "../common/helper";
 
 export default function Locations(props) {
     const [locationInformation, setLocationInformation] = useState([props.locationInformation]);

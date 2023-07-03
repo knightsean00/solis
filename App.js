@@ -7,6 +7,8 @@ import { StatusBar } from "expo-status-bar";
 import Locations from "./routes/Locations"; 
 import * as Location from "expo-location";
 import { getLocationInformation } from "./common/helper";
+import { useColorScheme } from "react-native";
+import * as SystemUI from "expo-system-ui";
 
 // const Stack = createNativeStackNavigator();
 
@@ -14,6 +16,7 @@ export default function App() {
     // In the future, we can just call the Forecast component with lat long fed int
     const [loading, setLoading] = useState(true);
     const [locationInformation, setLocationInformation] = useState(null);
+    const colorScheme = useColorScheme();
 
     const setCurrentLocation = async () => {
         let { status } = await Location.requestForegroundPermissionsAsync();
@@ -30,17 +33,23 @@ export default function App() {
         }
     };
 
+
+
     useEffect(() => {
         setCurrentLocation();
+        try {
+            SystemUI.setBackgroundColorAsync(colorScheme === "dark" ? "#000000" : "#ffffff");
+        } catch (err) {
+            console.log("Error setting root background color");
+            console.log(err);
+        }
+        
     }, []);
-
-    // const colorScheme = useColorScheme();
-    // const themeContainer = colorScheme === "dark" ? styles.darkContainer : styles.lightContainer;
 
     if (loading) {
         return (
             <View style={styles.centered}>
-                <ActivityIndicator size="large" color="#00ff00"/>
+                <ActivityIndicator size="large" color="#FF694D"/>
             </View>
         );
     }

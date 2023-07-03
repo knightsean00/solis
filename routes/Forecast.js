@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { StatusBar } from "expo-status-bar";
-import { ActivityIndicator, StyleSheet, Text, View, SafeAreaView, ScrollView, RefreshControl, Button, BackHandler } from "react-native";
-import { formatTime12, takeEveryN, formatTimeLabel } from "../common/helper";
+import { ActivityIndicator, StyleSheet, Text, View, Button, BackHandler, useColorScheme } from "react-native";
 import { LinearGradient, Stop, Defs } from "react-native-svg";
-import { DateTime } from "luxon";
 import chroma from "chroma-js";
 
 // Graph component
@@ -29,6 +26,8 @@ export default function Forecast(props) {
         "humidity",
         "sun",
     ]);
+    const colorScheme = useColorScheme();
+    const textColor = colorScheme === "dark" ? "#ffffff" : "#000000";
 
     useEffect(() => {
         setForecast(props.forecast);
@@ -63,7 +62,7 @@ export default function Forecast(props) {
     if (loading) {
         return (
             <View>
-                <ActivityIndicator size="large" color="#0000ff"/>
+                <ActivityIndicator size="large" color="#87dfe5"/>
             </View>
         );
     }
@@ -82,7 +81,7 @@ export default function Forecast(props) {
         hourly: {
             component: HourlyWeather,
             props: {
-                forecast: forecast.slice(0,24)
+                forecast: forecast.slice(1,24)
             }
         },
         daily: {
@@ -106,7 +105,6 @@ export default function Forecast(props) {
             props: {
                 title: "Precipitation",
                 yLabel: "%",
-                // xData: formatTimeLabel(forecast.map(period => period.endTime).slice(0, maxSlice)),
                 xData: forecast.map(period => period.endTime).slice(0, maxSlice),
                 yData: forecast.map(period => period.probabilityOfPrecipitation.value).slice(0, maxSlice),
                 domain: percentDomain,
@@ -119,7 +117,6 @@ export default function Forecast(props) {
             props: {
                 title: "Wind Speed",
                 yLabel: forecast[0].windSpeed.split(" ")[1],
-                // xData: formatTimeLabel(forecast.map(period => period.endTime).slice(0, maxSlice)),
                 xData: forecast.map(period => period.endTime).slice(0, maxSlice),
                 yData: forecast.map(period => Number(period.windSpeed.split(" ")[0])).slice(0, maxSlice),
                 gradient: WindSpeedGradient,
@@ -137,7 +134,6 @@ export default function Forecast(props) {
             props: {
                 title: "Humidity",
                 yLabel: "%",
-                // xData: formatTimeLabel(forecast.map(period => period.endTime).slice(0, maxSlice)),
                 xData: forecast.map(period => period.endTime).slice(0, maxSlice),
                 yData: forecast.map(period => period.humidity).slice(0, maxSlice),
                 domain: percentDomain,
@@ -150,7 +146,6 @@ export default function Forecast(props) {
             props: {
                 title: "Temperature",
                 yLabel: "°" + forecast[0].temperatureUnit,
-                // xData: formatTimeLabel(forecast.map(period => period.endTime).slice(0, maxSlice)),
                 xData: forecast.map(period => period.endTime).slice(0, maxSlice),
                 yData: forecast.map(period => period.temperature).slice(0, maxSlice),
                 domain: tempDomain,
@@ -168,7 +163,7 @@ export default function Forecast(props) {
             //     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             // }
         >
-            <Text style={styles.headerText} numberOfLines={1} adjustsFontSizeToFit>{text}</Text>
+            <Text style={[styles.headerText, {color: textColor}]} numberOfLines={1} adjustsFontSizeToFit>{text}</Text>
             <CurrentWeather weather={forecast[0]}/>
             {
                 moduleOrder.map((componentName, idx) => {
@@ -207,16 +202,17 @@ export default function Forecast(props) {
 const TemperatureGradientBuilder = (yMin, yMax, min, max) => {
     const percentageYMin = Math.max(Math.min((yMin - min) / (max - min), 1), 0);
     const percentageYMax = Math.max(Math.min((yMax - min) / (max - min), 1), 0);
-
-    const scale = chroma.scale(["#4700a3", "#0012ff", "#ff67a0", "#ff8839", "#ff3700", "#ff0000", "#5b0000"]);
+    
+    // const scale = chroma.scale(["#4700a3", "#0012ff", "#ff67a0", "#ff8839", "#ff3700", "#ff0000", "#5b0000"]);
+    const scale = chroma.scale(["#163bb0", "#FF5252"]);
 
     // console.log(percentageYMax);
     // console.log(percentageYMin);
     const TemperatureGradient = () => (
         <Defs key={"gradient"}>
             <LinearGradient id={"gradient"} x1={"0%"} y1={"0%"} x2={"0%"} y2={"100%"}>
-                <Stop offset={"0%"} stopColor={`${scale(percentageYMax).hex()}`} stopOpacity={.25}/>
-                <Stop offset={"100%"} stopColor={`${scale(percentageYMin).hex()}`} stopOpacity={.25}/>
+                <Stop offset={"0%"} stopColor={`${scale(percentageYMax).hex()}`} stopOpacity={1}/>
+                <Stop offset={"100%"} stopColor={`${scale(percentageYMin).hex()}`} stopOpacity={.5}/>
             </LinearGradient>
         </Defs>
     );
@@ -230,7 +226,7 @@ const TemperatureGradientBuilder = (yMin, yMax, min, max) => {
 const HumidityGradient = () => (
     <Defs key={"gradient"}>
         <LinearGradient id={"gradient"} x1={"0%"} y1={"0%"} x2={"0%"} y2={"100%"}>
-            <Stop offset={"0%"} stopColor={"#219fdf"} stopOpacity={.5}/>
+            <Stop offset={"0%"} stopColor={"#219fdf"} stopOpacity={1}/>
             <Stop offset={"100%"} stopColor={"#219fdf"} stopOpacity={0}/>
         </LinearGradient>
     </Defs>

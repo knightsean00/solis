@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Text, ActivityIndicator, Dimensions } from "react-native";
+import { StyleSheet, View, Text, ActivityIndicator, Dimensions, useColorScheme } from "react-native";
 import PropTypes from "prop-types";
 import { VictoryLabel, LineSegment, VictoryArea, VictoryAxis, VictoryChart, VictoryTheme, VictoryScatter } from "victory-native";
 import { LinearGradient, Stop, Defs } from "react-native-svg";
@@ -9,7 +9,9 @@ import { DateTime } from "luxon";
 export default function Sun(props) {
     const [sunData, setSunData] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [animationStagger, setStagger] = useState(props.animationStagger ? props.animationStagger : 0);
+    // const [animationStagger, setStagger] = useState(props.animationStagger ? props.animationStagger : 0);
+    const colorScheme = useColorScheme();
+    const textColor = colorScheme === "dark" ? "#ffffff" : "#000000";
 
     // useEffect
 
@@ -71,23 +73,23 @@ export default function Sun(props) {
     const Gradient = () => (
         <Defs key={"gradient"}>
             <LinearGradient id={"gradient"} x1={"0%"} y={"0%"} x2={"0%"} y2={"100%"}>
-                <Stop offset={"0%"} stopColor={"#e0a800"} stopOpacity={.5}/>
+                <Stop offset={"0%"} stopColor={"#e0a800"} stopOpacity={1}/>
                 <Stop offset={"50%"} stopColor={"#e00000"} stopOpacity={.5}/>
-                <Stop offset={"100%"} stopColor={"#10004f"} stopOpacity={.8}/>
+                <Stop offset={"100%"} stopColor={"#10004f"} stopOpacity={1}/>
             </LinearGradient>
         </Defs>
     );
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Sun Location</Text>
+            <Text style={[styles.title, {color: textColor}]}>Sun Location</Text>
             <VictoryChart
                 theme={VictoryTheme.material}
                 width={Dimensions.get("window").width}
                 padding={{
                     left: 5,
-                    top: 20,
-                    bottom: 30,
+                    top: 30,
+                    bottom: 35,
                     right: 15
                 }}
                 domain={{
@@ -105,7 +107,8 @@ export default function Sun(props) {
                     tickFormat={() => ""}
                     style={{
                         axis: {
-                            strokeWidth:1
+                            strokeWidth:1,
+                            stroke: textColor
                         },
                         grid: {
                             strokeWidth: 0
@@ -117,8 +120,9 @@ export default function Sun(props) {
                     style={{
                         data: {
                             fill: "url(#gradient)",
-                            stroke: "#000000",
-                            strokeWidth: 1
+                        },
+                        labels: {
+                            fill: textColor
                         },
                     }}
                     data={
@@ -146,11 +150,15 @@ export default function Sun(props) {
                     tickValues={[xSunData[2].toUnixInteger(), xSunData[4].toUnixInteger()]}
                     style={{
                         axis: {
-                            strokeWidth:1
+                            strokeWidth:1,
+                            stroke: textColor
                         },
                         grid: {
-                            stroke: "#000000",
-                            opacity: .15
+                            stroke: textColor,
+                            opacity: .35
+                        },
+                        labels: {
+                            fill: textColor
                         },
                     }}
                     tickComponent={<LineSegment style={{strokeWidth: 0}}/>}

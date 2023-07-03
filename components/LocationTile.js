@@ -1,8 +1,12 @@
 import React from "react";
 import PropTypes from "prop-types";
-import { View, Text, ActivityIndicator, StyleSheet, Pressable, Alert } from "react-native";
+import { View, Text, ActivityIndicator, StyleSheet, Pressable, Alert, useColorScheme } from "react-native";
 
 export default function LocationTile(props) {
+    const colorScheme = useColorScheme();
+    const textColor = colorScheme === "dark" ? "#ffffff" : "#000000";
+    const backgroundColor = colorScheme === "dark" ? ["#000000", "#333333"] : ["#ffffff", "#eeeeee"];
+
     return (
         <Pressable
             onPress={() => {
@@ -31,29 +35,29 @@ export default function LocationTile(props) {
             }}
             style={({pressed}) => [
                 {
-                    backgroundColor: pressed ? "#eeeeee" : "#ffffff",
+                    backgroundColor: pressed ? backgroundColor[1] : backgroundColor[0],
                 }, styles.tile
             ]}
         > 
             <View style={styles.row}>
                 <View style={styles.leftContainer}>
-                    <Text style={styles.name}>{props.locationInformation.city}</Text>
+                    <Text style={[styles.name, {color: textColor}]} numberOfLines={1} adjustsFontSizeToFit>{props.locationInformation.city}</Text>
                 </View>
                 <View style={styles.rightContainer}>
                     {
                         props.temperature != null ?
                             <>
-                                <Text style={styles.temperature}>{props.temperature}{props.temperatureType}</Text>
-                                <Text style={styles.forecast}>{props.weather}</Text>
+                                <Text style={[styles.temperature, {color: textColor}]}>{props.temperature}{props.temperatureType}</Text>
+                                <Text style={[styles.forecast, {color: textColor}]}>{props.weather}</Text>
                             </> :
-                            <ActivityIndicator size="large" color="#000000" />
+                            <ActivityIndicator size="large" color="#FF694D" />
                     }
                 </View>
             </View>
             {
                 props.currentLocation ?
                     <View>
-                        <Text style={{textAlign: "left", fontSize: 10}}>Current Location</Text>
+                        <Text style={{textAlign: "left", fontSize: 10, color: textColor}}>Current Location</Text>
                     </View> :
                     <></>
             }      
@@ -66,7 +70,6 @@ const styles = StyleSheet.create({
         paddingVertical: "5%",
         paddingHorizontal: "3%",
         marginVertical: "2%",
-
         borderRadius: 10,
         borderColor: "#cccccc",
         borderWidth: 1,
@@ -76,9 +79,9 @@ const styles = StyleSheet.create({
         alignItems: "center"
     },
     leftContainer: {
-        flex: 4
+        flex: 2
     },
-    rigthContainer: {
+    rightContainer: {
         flex: 1
     },
     name: {

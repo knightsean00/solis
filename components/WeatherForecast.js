@@ -1,8 +1,9 @@
 import React from "react";
-import { StyleSheet, View, Text, FlatList } from "react-native";
+import { StyleSheet, View, Text, FlatList, useColorScheme } from "react-native";
 import PropTypes from "prop-types";
 import { DateTime } from "luxon";
 import { getForecast } from "../common/helper";
+import WeatherTile from "./WeatherTile";
 
 
 // temperature: period.temperature,
@@ -18,25 +19,28 @@ import { getForecast } from "../common/helper";
 
 
 export default function WeatherForecast(props) {
+    const colorScheme = useColorScheme();
+    const textColor = colorScheme === "dark" ? "#ffffff" : "#000000";
 
     const forecastData = getForecast(props.forecast);
-
     return (
-        <View>
-            <Text style={styles.title}>5 Day Forecast</Text>
-            {/* <FlatList 
+        <View style={styles.container}>
+            <Text style={[styles.title, {color: textColor}]}>Day Forecast</Text>
+            <FlatList 
                 data={forecastData}
-                renderItem={({item}) => <Text>Min Temperature: {item["minTemp"]} - Max Temperature {item["maxTemp"]}</Text>}
-            /> */}
-            {
-                forecastData.map((val, idx) => {
-                    return (
-                        <View key={idx}>
-                            <Text>Date {val["date"]} Min Temp {val["minTemp"]} - Max Temp {val["maxTemp"]}</Text>
-                        </View>
-                    );
-                })
-            }
+                renderItem={({item}) =>
+                    <WeatherTile 
+                        title={item.date.toLocaleString(DateTime.DATE_MED_WITH_WEEKDAY)}
+                        shortForecast={item.forecast}
+                        listedInformation={[
+                            `High ${item.maxTemp}°${item.temperatureUnit}`,
+                            `Low ${item.minTemp}°${item.temperatureUnit}`,
+                        ]}
+                    />
+                }
+                horizontal
+                showsHorizontalScrollIndicator={false}
+            />
         </View>
     );
 }

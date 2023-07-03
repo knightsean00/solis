@@ -29,19 +29,6 @@ export function formatTime12(date, includeDate) {
     return `${hour}${timeOfDay}`;
 }
 
-export function formatTimeLabel(dates) {
-    const seen = new Set();
-    return dates.map(date => {
-        // if (seen.has(date.getDate())) {
-        //     return formatTime12(date, false);
-        // } else {
-        //     seen.add(date.getDate());
-        //     return formatTime12(date, true);
-        // }
-        return formatTime12(date, true);
-    });
-}
-
 export function takeEveryN(array, n) {
     const newArray = [];
     for (let i = 0; i < array.length; i += n)
@@ -53,31 +40,45 @@ export function takeEveryN(array, n) {
 // general forecast the specified amount of days.
 // Each day contains information about the date, the min temp, the max temp
 // will need to add stuff for forecast
+
 export function getForecast(forecast) {
-    const newArray = [];
+    const data = {};
 
-    let curHour = forecast[0].startTime.hour;
-    let timeToNextDay = 24 - curHour;
-
-    const slicedForcast = forecast.slice(timeToNextDay);
-
-    for (let day = 0; day < 5; day++) {
-        newArray.push({"date": forecast[day * 24].startTime.toLocaleString(DateTime.DATE_MED_WITH_WEEKDAY), "temps" : []});
-        for (let hour = 0; hour < 24; hour++) {
-            newArray[day]["temps"].push(slicedForcast[day * 24 + hour].temperature);
+    for (const period of forecast) {
+        const key = period.startTime.toLocaleString(DateTime.DATE_MED_WITH_WEEKDAY);
+        if (key in data === false) {
+            data[key] = {
+                date: period.startTime,
+                temps: [],
+                forecastCount: {},
+                temperatureUnit: period.temperatureUnit
+            };
         }
+
+        data[key].temps.push(period.temperature);
+        if (period.shortForecast in data[key].forecastCount === false) {
+            data[key].forecastCount[period.shortForecast] = 0;
+        }
+        if (!period.shortForecast.includes("Clear")) {
+            data[key].forecastCount[period.shortForecast]++;
+        }
+        data[key].forecastCount[period.shortForecast]++;
     }
 
-    return newArray.map((day) => {
-        return {
-            date: day["date"], 
-            maxTemp: Math.max(...day["temps"]),
-            minTemp: Math.min(...day["temps"])
-            // maxTemp: day["temps"].reduce((x1, x2) => x1 > x2 ? x1 : x2),
-            // minTemp: day["temps"].reduce((x1, x2) => x1 < x2 ? x1 : x2)
-        };
+    const sortedData = Object.values(data).sort((a, b) => a.date.toMillis() - b.date.toMillis());
+    sortedData.forEach((period) => {
+        period.forecast = Object.keys(period.forecastCount).reduce((accumulator, currentValue) => {
+            if (period.forecastCount[accumulator] < period.forecastCount[currentValue])
+                return currentValue;
+            if (period.forecastCount[accumulator] === period.forecastCount[currentValue] && accumulator.includes("Clear") && !currentValue.includes("Clear"))
+                return currentValue;
+            return accumulator;
+        });
+
+        period.minTemp = Math.min(...period.temps);
+        period.maxTemp = Math.max(...period.temps);
     });
-    
+    return sortedData;
 }
 
 export async function getNOAALocation(latitude, longitude) {
@@ -140,8 +141,8 @@ export async function getWeatherConditions(locationInfo) {
                     windDirection: period.windDirection,
                     shortForecast: period.shortForecast,
                     humidity: period.relativeHumidity.value,
-                    startTime: DateTime.fromISO(period.startTime),
-                    endTime: DateTime.fromISO(period.endTime),
+                    startTime: DateTime.fromISO(period.startTime, {setZone: true}),
+                    endTime: DateTime.fromISO(period.endTime, {setZone: true}),
                 };
             });
         }

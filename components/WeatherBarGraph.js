@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { StyleSheet, Text, View, Dimensions, ScrollView} from "react-native";
+import { StyleSheet, Text, View, Dimensions, ScrollView, useColorScheme} from "react-native";
 import { VictoryLine, VictoryLabel, VictoryBar, VictoryAxis, VictoryChart, VictoryTheme } from "victory-native";
 import { DateTime } from "luxon";
 import { formatTime12 } from "../common/helper";
@@ -8,7 +8,9 @@ import { formatTime12 } from "../common/helper";
 export default function WeatherBarGraph(props) {
     const [yData, setYData] = useState([]);
     const [xData, setXData] = useState([]);
-    const [animationStagger, setStagger] = useState(props.animationStagger ? props.animationStagger : 0);
+    // const [animationStagger, setStagger] = useState(props.animationStagger ? props.animationStagger : 0);
+    const colorScheme = useColorScheme();
+    const textColor = colorScheme === "dark" ? "#ffffff" : "#000000";
 
     useEffect(() => {
         setYData(props.yData);
@@ -21,7 +23,6 @@ export default function WeatherBarGraph(props) {
 
     const Gradient = props.gradient;
 
-    const seen = new Set();
     const lineSeen = new Set();
     const divisibleBy = 5;
 
@@ -32,7 +33,7 @@ export default function WeatherBarGraph(props) {
 
     return (
         <View style={styles.container}> 
-            <Text style={styles.title}>{props.title}</Text>
+            <Text style={[styles.title, {color: textColor}]}>{props.title}</Text>
             <ScrollView
                 horizontal={true} 
                 showsHorizontalScrollIndicator={false}
@@ -53,8 +54,15 @@ export default function WeatherBarGraph(props) {
                         tickFormat={(t) => `${Math.round(t)}${props.yLabel}`}
                         style={{
                             axis: {
-                                strokeWidth:1
-                            }
+                                strokeWidth:1,
+                                stroke: textColor
+                            },
+                            ticks: {
+                                stroke: textColor
+                            },
+                            tickLabels: {
+                                fill: textColor
+                            },
                         }}
                     />
                     <VictoryBar
@@ -96,11 +104,18 @@ export default function WeatherBarGraph(props) {
                         }}
                         style={{
                             axis: {
-                                strokeWidth:1
+                                strokeWidth:1,
+                                stroke: textColor
                             },
                             grid: {
                                 strokeWidth:0
-                            }
+                            },
+                            ticks: {
+                                stroke: textColor
+                            },
+                            tickLabels: {
+                                fill: textColor
+                            },
                         }}
                     />
                     {
@@ -122,7 +137,11 @@ export default function WeatherBarGraph(props) {
                                     style={{
                                         data: {
                                             strokeWidth: 1,
-                                        }
+                                            stroke: textColor
+                                        },
+                                        labels: {
+                                            fill: textColor
+                                        },
                                     }}
                                     labels={["", `${val.month}/${val.day}`]}
                                     labelComponent={<VictoryLabel dy={20} dx={20}/>}

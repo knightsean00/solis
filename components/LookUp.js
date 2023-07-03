@@ -1,12 +1,13 @@
 import React , {useState} from "react";
 import PropTypes from "prop-types";
-import { View, TextInput, StyleSheet, Alert,  } from "react-native";
+import { View, TextInput, StyleSheet, Alert, useColorScheme,  } from "react-native";
 import * as Location from "expo-location";
 import { getLocationInformation } from "../common/helper";
 
 
 export default function LookUp(props) {
     const [input, setInput] = useState("");
+    const colorScheme = useColorScheme();
 
     const handleSubmit = () => {
         Location.geocodeAsync(input + " USA").then((res) => {
@@ -28,13 +29,13 @@ export default function LookUp(props) {
                 onChangeText={setInput}
                 value={input}
                 onSubmitEditing={handleSubmit}
-                style={styles.inputStyle}
+                style={[styles.inputStyle, {color: colorScheme === "dark" ? "#ffffff" : "#000000"}]}
                 returnKeyLabel="search"
+                placeholderTextColor={colorScheme === "dark" ? "#ffffff" : "#000000"}
             />
         </View>
     );
 }
-// console.log(value);
 
 const styles = StyleSheet.create({
     container: {
@@ -51,11 +52,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: "3%",
         minWidth: "75%",
         maxWidth: "75%",
-        textAlign: "left"
+        textAlign: "left",
     },
     row: {
         flexDirection: "row",
-
         alignItems: "center"
     },
     name: {
